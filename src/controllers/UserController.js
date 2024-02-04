@@ -1,5 +1,5 @@
 // Controller -> responsável por armazenar toda regra de negócios da aplicação
-const users = require("../mocks/users");
+let users = require("../mocks/users");
 
 module.exports = {
   listUsers(req, res) {
@@ -29,24 +29,43 @@ module.exports = {
   },
 
   createUser(req, res) {
-    let body = "";
+    const { body } = req;
+    const lastUserId = users[users.length - 1].id;
 
-    req.on("data", (chunk) => {
-      body += chunk;
+    const newUser = {
+      id: lastUserId + 1,
+      name: body.name,
+    };
+
+    users.push(newUser);
+    res.send(200, newUser);
+  },
+
+  updateUser(req, res) {
+    let { id } = req.params;
+    const { name } = req.body;
+
+    id = Number(id);
+
+    const userExists = users.find((user) => user.id === id);
+
+    if (!userExists) {
+      return res.send(400, { error: "User not found" });
+    }
+
+    users = users.map((user) => {
+      return user.id === id ? { ...user, name } : user;
     });
 
-    req.on("end", () => {
-      body = JSON.parse(body);
+    res.send(200, { id, name });
+  },
 
-      const lastUserId = users[users.length - 1].id;
+  deleteUser(req, res) {
+    let { id } = req.params;
+    id = Number(id);
 
-      const newUser = {
-        id: lastUserId + 1,
-        name: body.name,
-      };
+    users = users.filter((user) => user.id !== id);
 
-      users.push(newUser);
-      res.send(200, newUser);
-    });
+    res.send(200, { deleted: true });
   },
 };
